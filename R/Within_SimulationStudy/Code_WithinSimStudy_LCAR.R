@@ -37,21 +37,6 @@ lambda.value <- c(0.1, 0.5, 0.9)
 #################################################
 nimbleOptions(clearNimbleFunctionsAfterCompiling = TRUE)
 
-##LCAR
-# Diagonal matrix with the number of neighbors of each area
-D <- diag(nadj)
-# Adjacency matrix
-W <- nb2mat(cv.nb, style = "B", zero.policy = TRUE)
-# Eigenvalues of D-W
-Lambda <- eigen(D - W)$values
-# Identity matrix
-I <- diag(rep(1, S.area))
-
-# All the neighborhoods j ~ k where k < j
-from.to <- cbind(rep(1:S.area, times = nadj), map); colnames(from.to) <- c("from", "to")
-from.to <- from.to[which(from.to[, 1] < from.to[, 2]), ]
-NDist <- nrow(from.to)
-
 
 dcar_leroux <- nimbleFunction(
   name = 'dcar_leroux',
@@ -147,17 +132,40 @@ for (na in 1:length(n.areas)) {
   #################################################
   ###    Load the cartography   ###
   #################################################
-  load(paste0("../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
   carto <- Carto.areas
+  S.area <- length(unique(carto$ID))
+  
 
-  carto.nb <- poly2nb(carto)
-  W.nb <- nb2mat(carto.nb, style="B")
-  nbInfo <- nb2WB(carto.nb)
+  cv.nb <- poly2nb(carto)
+  W.nb <- nb2mat(cv.nb, style="B")
+  nbInfo <- nb2WB(cv.nb)
+  # Number of neighbors of each municipality
+  nadj <- card(cv.nb)
+  # Neighbors of each municipality
+  map <- unlist(cv.nb)
+  
+  
+  ##LCAR
+  # Diagonal matrix with the number of neighbors of each area
+  D <- diag(nadj)
+  # Adjacency matrix
+  W <- nb2mat(cv.nb, style = "B", zero.policy = TRUE)
+  # Eigenvalues of D-W
+  Lambda <- eigen(D - W)$values
+  # Identity matrix
+  I <- diag(rep(1, S.area))
+  
+  # All the neighborhoods j ~ k where k < j
+  from.to <- cbind(rep(1:S.area, times = nadj), map); colnames(from.to) <- c("from", "to")
+  from.to <- from.to[which(from.to[, 1] < from.to[, 2]), ]
+  NDist <- nrow(from.to)
+  
   
   #################################################
   ###    Load the simulated data   ###
   #################################################
-  load(paste0("../Data/Data_SimulationStudy_",hotspot,"_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Data_SimulationStudy_",hotspot,"_",n.areas[na],"areas.Rdata"))
   S.area <- length(unique(DataSIM$code))
   
   for (l in 1:length(lambda.value)) {
@@ -174,36 +182,45 @@ for (na in 1:length(n.areas)) {
         ##########################################################################
         ##########################################################################
         ####L-CAR
-        constants <- list(N = S.area, NDist = NDist, Lambda = Lambda, 
-                          from.to = from.to, num = nbInfo$num, fix.sd = sd.value[sd],
+        constants <- list(pop = data$population,
+                          rate = data$crude.rate/10^5,
+                          N = S.area, 
+                          NDist = NDist, 
+                          Lambda = Lambda, 
+                          from.to = from.to, 
+                          fix.sd = sd.value[sd],
                           fix.lambda = lambda.value[l])
         
         
-        inits <- list(list(alpha = 0, theta = rnorm(S.area, sd = 0.1)),
-                      list(alpha = 0, theta = rnorm(S.area, sd = 0.1)),
-                      list(alpha = 0, theta = rnorm(S.area, sd = 0.1)))
+        inits = function(){
+          list(alpha = 0, theta = rnorm(S.area, sd = 0.1))}
         
         
-        data.nimble <- list(O = data$observed, pop = data$population,
-                            rate = data$crude.rate/10^5,  zero.theta = 0)
+        data.nimble <- list(O = data$observed, zero.theta = 0)
         
+        # mcmc.out <- nimbleMCMC(code = modelCode,
+        #                        constants = constants,
+        #                        data = data.nimble,
+        #                        inits = inits(),
+        #                        nchains = 3,
+        #                        niter = 30000,
+        #                        nburnin = 5000,
+        #                        thin = 75,
+        #                        summary = TRUE,
+        #                        samples = TRUE,
+        #                        monitors = c('r', 'MSS.r', 'RMSS.r'),
+        #                        samplesAsCodaMCMC = TRUE,
+        #                        setSeed = c(20112023, 54782021, 04062025),
+        #                        WAIC = TRUE)
         
-        mcmc.out <- nimbleMCMC(code = modelCode,
-                               constants = constants,
-                               data = data.nimble,
-                               inits = inits,
-                               nchains = 3,
-                               niter = 30000,
-                               nburnin = 5000,
-                               thin = 75,
-                               summary = TRUE,
-                               samples = TRUE,
-                               monitors = c('alpha', 'sd.theta', 'rho',
-                                            'r', 'MSS.r', 'theta',
-                                            'RMSS.r'),
-                               samplesAsCodaMCMC = TRUE,
-                               setSeed = c(20112023, 54782021, 04062025),
-                               WAIC = TRUE)
+        nimModel <- nimbleModel(code = modelCode, data = data.nimble,
+                                constants = constants, inits = inits())
+        compileNimble(nimModel)
+        modBuilt <- buildMCMC(nimModel, monitors = c('r', 'MSS.r', 'RMSS.r'),
+                              setSeed = TRUE)
+        modComp <- compileNimble(modBuilt, project = nimModel)
+        mcmc.out <- runMCMC(modComp, nchains = 3, niter = 30000, thin = 75,
+                                                 nburnin = 5000, summary = TRUE)
         
         LCAR.res[act.sim-c.save] <- list(mcmc.out)
         

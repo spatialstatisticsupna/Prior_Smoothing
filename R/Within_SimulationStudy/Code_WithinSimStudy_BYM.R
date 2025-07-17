@@ -77,7 +77,7 @@ for (na in 1:length(n.areas)) {
   #################################################
   ###    Load the cartography   ###
   #################################################
-  load(paste0("../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
   carto <- Carto.areas
   
   carto.nb <- poly2nb(carto)
@@ -87,7 +87,7 @@ for (na in 1:length(n.areas)) {
   #################################################
   ###    Load the simulated data   ###
   #################################################
-  load(paste0("../Data/Data_SimulationStudy_",hotspot,"_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Data_SimulationStudy_",hotspot,"_",n.areas[na],"areas.Rdata"))
   S.area <- length(unique(DataSIM$code))
   
   for (v in 1:length(v.value)) {
@@ -104,35 +104,37 @@ for (na in 1:length(n.areas)) {
         ##########################################################################
         ##########################################################################
         ####BYM
-        constants <- list(N = S.area, L = length(nbInfo$adj), num = nbInfo$num,
-                          weights = nbInfo$weights, adj = nbInfo$adj, fix.sd = sd.value[sd],
+        constants <- list(pop = data$population,
+                          rate = data$crude.rate/10^5,
+                          N = S.area, 
+                          L = length(nbInfo$adj), 
+                          num = nbInfo$num,
+                          weights = nbInfo$weights, 
+                          adj = nbInfo$adj, 
+                          fix.sd = sd.value[sd],
                           fix.tau = sqrt(v.value[v])*sd.value[sd])
-        inits <- list(list(alpha = 0, 
-                           iid = rnorm(S.area, sd = 0.1), phi = rnorm(S.area, sd=0.1)),
-                      list(alpha = 0, 
-                           iid = rnorm(S.area, sd = 0.1), phi = rnorm(S.area, sd=0.1)),
-                      list(alpha = 0,
-                           iid = rnorm(S.area, sd = 0.1), phi = rnorm(S.area, sd=0.1)))
         
-        data.nimble <- list(O = data$observed, pop = data$population,
-                            rate = data$crude.rate/10^5)
+        inits = function(){
+          list(alpha = 0, iid = rnorm(S.area, sd = 0.1), 
+               phi = rnorm(S.area, sd=0.1))}
+        
+        data.nimble <- list(O = data$observed)
         
         mcmc.out <- nimbleMCMC(code = code,
                                constants = constants,
                                data = data.nimble,
-                               inits = inits,
+                               inits = inits(),
                                nchains = 3,
                                niter = 30000,
                                nburnin = 5000,
                                thin = 75,
                                summary = TRUE,
                                samples = TRUE,
-                               monitors = c('alpha', 'sigma.phi', 'tau.phi',
-                                            'sigma.iid', 'tau.iid', 'phi',
-                                            'r', 'MSS.r', 'RMSS.r'),
+                               monitors = c('r', 'MSS.r', 'RMSS.r'),
                                samplesAsCodaMCMC = TRUE,
                                setSeed = c(20112023, 54782021, 04062025),
                                WAIC = TRUE)
+
         
         BYM.res[act.sim-c.save] <- list(mcmc.out)
         

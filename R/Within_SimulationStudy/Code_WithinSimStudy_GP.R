@@ -29,7 +29,7 @@ hotspot <- c("Scenario2")
 n.areas <- c("47", "100", "300")
 ### Fix values for hyperparameters
 sd.value <- c(0.01, 0.05, 0.09, 0.2, 0.5)
-lambda.value <- c(1, 5, 9)
+rho.value <- c(1, 5, 9)
 
 #################################################
 ###    NIMBLE Code for GP  ###
@@ -58,9 +58,9 @@ code <- nimbleCode({
   alpha ~ dflat()
   overallRR <- exp(alpha)
   
-  sigma <- 0.05  
+  sigma <- fix.sd 
   tau <- 1 / sigma^2
-  rho <- 1
+  rho <- fix.rho
   
   
   mu[1:N] <- rep(0, N)
@@ -88,7 +88,7 @@ for (na in 1:length(n.areas)) {
   #################################################
   ###    Load the cartography   ###
   #################################################
-  load(paste0("../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
   carto <- Carto.areas
   
   carto.nb <- poly2nb(carto)
@@ -98,12 +98,16 @@ for (na in 1:length(n.areas)) {
   g <- st_as_sf(carto)
   g_centroid <- st_point_on_surface(x = g)
   distMatrix <- st_distance(g_centroid, g_centroid)
-  distMatrix <- matrix(distMatrix/100000, ncol = nrow(g_centroid)) ###????
+  ###Taking into account the distances between areas, we decided to scale the distance to units of 
+  ###100km.Since the distMatrix is originally in meters, we divided all values by 100,000, 
+  ###resulting in a maximum distance sligthly above 10 (i.e., just over 1,000 km).
+  distMatrix <- matrix(distMatrix/100000, ncol = nrow(g_centroid)) 
+   
   
   #################################################
   ###    Load the simulated data   ###
   #################################################
-  load(paste0("../Data/Data_SimulationStudy_",hotspot,"_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Data_SimulationStudy_",hotspot,"_",n.areas[na],"areas.Rdata"))
   S.area <- length(unique(DataSIM$code))
   
   
@@ -121,31 +125,41 @@ for (na in 1:length(n.areas)) {
         ##########################################################################
         ##########################################################################
         ####iCAR
-        constants <- list(N = S.area, dists = distMatrix)
+        constants <- list(pop = data$population,
+                          rate = data$crude.rate/10^5,
+                          N = S.area, 
+                          dists = distMatrix,
+                          fix.sd = sd.value[sd],
+                          fix.rho = rho.value[l])
         
-        inits <- list(list(alpha = 0, theta = rnorm(S.area, sd = 0.1)),
-                      list(alpha = 0, theta = rnorm(S.area, sd = 0.1)),
-                      list(alpha = 0, theta = rnorm(S.area, sd = 0.1)))
+        inits = function(){
+          list(alpha = 0, theta = rnorm(S.area, sd = 0.1))}
         
-        data.nimble <- list(O = data$observed, pop = data$population,
-                            rate = data$crude.rate/10^5)
+        data.nimble <- list(O = data$observed)
         
-        mcmc.out <- nimbleMCMC(code = code,
-                               constants = constants,
-                               data = data.nimble,
-                               inits = inits,
-                               nchains = 3,
-                               niter = 30000,
-                               nburnin = 5000,
-                               thin = 75,
-                               summary = TRUE,
-                               samples = TRUE,
-                               monitors = c('alpha', 'sigma', 'rho',
-                                            'r', 'MSS.r', 'theta',
-                                            'RMSS.r'),
-                               samplesAsCodaMCMC = TRUE,
-                               setSeed = c(20112023, 54782021, 04062025),
-                               WAIC = TRUE)
+        # mcmc.out <- nimbleMCMC(code = code,
+        #                        constants = constants,
+        #                        data = data.nimble,
+        #                        inits = inits,
+        #                        nchains = 3,
+        #                        niter = 30000,
+        #                        nburnin = 5000,
+        #                        thin = 75,
+        #                        summary = TRUE,
+        #                        samples = TRUE,
+        #                        monitors = c('r', 'MSS.r', 'RMSS.r'),
+        #                        samplesAsCodaMCMC = TRUE,
+        #                        setSeed = c(20112023, 54782021, 04062025),
+        #                        WAIC = TRUE)
+        
+        nimModel <- nimbleModel(code = code, data = data.nimble,
+                                constants = constants, inits = inits())
+        compileNimble(nimModel)
+        modBuilt <- buildMCMC(nimModel, monitors = c('r', 'MSS.r', 'RMSS.r'),
+                              setSeed = TRUE)
+        modComp <- compileNimble(modBuilt, project = nimModel)
+        mcmc.out <- runMCMC(modComp, nchains = 3, niter = 30000, thin = 75,
+                            nburnin = 5000, summary = TRUE)
         
         GP.res[act.sim-c.save] <- list(mcmc.out)
         
