@@ -13,7 +13,7 @@ This repository contains the R code to fit in NIMBLE the code to replicate and r
 3.  [Acknowledgements](#Acknowledgements)
 4.  [References](#Ref)
 
-# Data {#data}
+# Data <a name="Data"/>
 
 This folder contains the datasets and cartography files used in the simulation studies and data illustrations presented in the work.
 
@@ -27,11 +27,11 @@ This folder contains the datasets and cartography files used in the simulation s
 
 Note that data for Scenarios 4 to 6 are not included, since the spatial distribution is the same as in Scenarios 1 to 3, respectively, however, the variability of the rate values is lower.
 
-# R code {#Rcode}
+# R code <a name="Rcode"/>
 
 This folder contains the R code to replicate and reproduce the within prior and across priors simulation studies, as well as the data illustration described in the paper. The code is organized into three subfolders, each corresponding to a specific part of the study:
 
-1.  Within Prior Simulation Study (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/Within_SimulationStudy)).
+1.  Within Prior Simulation Study (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/Within_SimulationStudy)). <a name="WSS"/>
 
     -   This folder includes code to fit the four spatial priors discussed in Section 4.1 of the paper: iCAR, LCAR, BYM, and GP.
 
@@ -40,21 +40,24 @@ This folder contains the R code to replicate and reproduce the within prior and 
     -   Note: the LCAR model implementation is based on [beltrán-sánchez et al (2024)](https://doi.org/10.1002/sim.10166).
 
     -   Results are generated using `Code_Results_Within.R`.
+  
 
-2.   Across Priors Simulation Study (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/Across_SimulationStudy)).
+2.   Across Priors Simulation Study (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/Across_SimulationStudy)). <a name="Ass"/>
 
-   -   This folder includes both model-fitting scripts and result-generation code.
-   -   Model-fitting scripts follow the format: `Code_AcrossSimStu_iid.R`, `Code_AcrossSimStu_GP.R`, etc.
-   -   Results are generated using `Code_Results_AcrossPriors.R`.
+        - This folder includes both model-fitting scripts and result-generation code.
+  
+       - Model-fitting scripts follow the format: `Code_AcrossSimStu_iid.R`, `Code_AcrossSimStu_GP.R`, etc.
+  
+       - Results are generated using `Code_Results_AcrossPriors.R`.
 
 
-3.  Data Illustration (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/RealData_Illustration)).
+3.  Data Illustration (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/RealData_Illustration)). <a name="illus"/>
 
     -   This folder contains the code used to fit the models and produce the results for the real data applications.
 
     -   Separate scripts are provided for the two case studies: peninsular Spain and England.
 
-# Acknowledgements <a name="Acknowledgements"/> {#acknowledgements}
+# Acknowledgements <a name="Acknowledgements"/>
 
 The work was supported by Project PID2020-113125RB-I00/MCIN/AEI/10.13039/501100011033. Garazi Retegui is supported by PhD student scholarship from the Public University of Navarra together with Banco Santander (Ayudas Predoctorales Santander UPNA 2021-2022). Jaione Etxeberria and María Dolores Ugarte would like to acknowledge support from Project UNEDPAM/PI/PR24/05A. ![plot](https://github.com/spatialstatisticsupna/Prior_Smoothing/blob/main/micin-aei.jpg) ![plot](https://github.com/spatialstatisticsupna/Prior_Smoothing/blob/main/UNED_Pamplona_2023.jpg)
 
