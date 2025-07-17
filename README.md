@@ -1,6 +1,3 @@
----
-bibliography: references.bib
----
 
 # On prior smoothing with discrete spatial data in the context of disease mapping
 
@@ -16,7 +13,7 @@ This repository contains the R code to fit in NIMBLE the code to replicate and r
 3.  [Acknowledgements](#Acknowledgements)
 4.  [References](#Ref)
 
-# Data <a name="Data"/> {#data}
+# Data {#data}
 
 This folder contains the datasets and cartography files used in the simulation studies and data illustrations presented in the work.
 
@@ -30,7 +27,7 @@ This folder contains the datasets and cartography files used in the simulation s
 
 Note that data for Scenarios 4 to 6 are not included, since the spatial distribution is the same as in Scenarios 1 to 3, respectively, however, the variability of the rate values is lower.
 
-# R code <a name="Rcode"/> {#Rcode}
+# R code {#Rcode}
 
 This folder contains the R code to replicate and reproduce the within prior and across priors simulation studies, as well as the data illustration described in the paper. The code is organized into three subfolders, each corresponding to a specific part of the study:
 
@@ -40,17 +37,16 @@ This folder contains the R code to replicate and reproduce the within prior and 
 
     -   Model-fitting scripts follow the format: `Code_WithinSimStudy_iCAR.R`, `Code_WithinSimStudy_LCAR.R`, etc.
 
-    -   Note: the LCAR model implementation is based on [@beltrán-sánchez2024].
+    -   Note: the LCAR model implementation is based on [beltrán-sánchez et al (2024)](https://doi.org/10.1002/sim.10166).
 
     -   Results are generated using `Code_Results_Within.R`.
 
 2.   Across Priors Simulation Study (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/Across_SimulationStudy)).
 
-    -   This folder includes both model-fitting scripts and result-generation code.
+   -   This folder includes both model-fitting scripts and result-generation code.
+   -   Model-fitting scripts follow the format: `Code_AcrossSimStu_iid.R`, `Code_AcrossSimStu_GP.R`, etc.
+   -   Results are generated using `Code_Results_AcrossPriors.R`.
 
-    -   Model-fitting scripts follow the format: `Code_AcrossSimStu_iid.R`, `Code_AcrossSimStu_GP.R`, etc.
-
-    -   Results are generated using `Code_Results_AcrossPriors.R`.
 
 3.  Data Illustration (available [here](https://github.com/spatialstatisticsupna/Prior_Smoothing/tree/main/R/RealData_Illustration)).
 
