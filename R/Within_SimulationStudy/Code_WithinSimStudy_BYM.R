@@ -32,7 +32,7 @@ sd.value <- c(0.01, 0.05, 0.09, 0.2, 0.5)
 v.value <- c(0.25, 1, 4)
 
 #################################################
-###    NIMBLE Code for iCAR  ###
+###    NIMBLE Code for BYM  ###
 #################################################
 nimbleOptions(clearNimbleFunctionsAfterCompiling = TRUE)
 
