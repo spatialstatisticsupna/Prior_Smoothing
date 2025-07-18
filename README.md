@@ -21,7 +21,7 @@ This folder contains the datasets and cartography files used in the simulation s
 
 -   `Carto_Spain_47areas.Rdata`, `Carto_Spain_100areas.Rdata` and `Carto_Spain_300areas.Rdata`: These cartography files include the cartography of peninsular Spain divided into 47, 100 and 300 areas, respectively.
 
--   `Data_England.Rdata` and `Carto_England.Rdata`: Dataset including counts for lung cancer and the corresponding population at risk, focusing on males in England in 2017 and the cartography file including the cartography of England.
+-   `Data_England.Rdata` and `Carto_England`: Dataset including counts for lung cancer and the corresponding population at risk, focusing on males in England in 2017 and a folder containing cartography files for England.
 
 -   `Data_SimulationStudy_Scenario1_47areas.Rdata`, `Data_SimulationStudy_Scenario1_100areas.Rdata`, `Data_SimulationStudy_Scenario1_300areas.Rdata` and `Data_SimulationStudy_Scenario1_England.Rdata`: These datasets include the simulated data for Scenario 1 when Spain is divided into 47, 100 and 300 areas, and England, respectively. Similar file naming structure, replacing `Scenario1` with `Scenario2` or `Scenario3` can be found for Scenarios 2 and 3, respectively.
 
