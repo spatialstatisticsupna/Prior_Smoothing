@@ -22,15 +22,6 @@ if (!file.exists("./SimulationStudy_BYM2")){
 
 
 #################################################
-###    Required Constants   ###
-#################################################
-### Scenarios
-hotspot <- c("Scenario1", "Scenario2", "Scenario3")
-### Number of areas
-n.areas <- c("47", "100", "300")
-
-
-#################################################
 ###    NIMBLE Code for BYM2  ###
 #################################################
 nimbleOptions(clearNimbleFunctionsAfterCompiling = TRUE)
@@ -67,6 +58,20 @@ code <- nimbleCode({
     RMSS.r[i] <- (rate[i]-r[i])^2/r[i]
   }
 })
+
+
+################################################################################
+##########                      Peninsular Spain                      ##########
+################################################################################
+#################################################
+###    Required Constants   ###
+#################################################
+### Scenarios
+hotspot <- c("Scenario1", "Scenario2", "Scenario3")
+### Number of areas
+n.areas <- c("47", "100", "300")
+
+
 
 
 #################################################
@@ -165,6 +170,99 @@ for (na in 1:length(n.areas)) {
 
 
 
+################################################################################
+##########                           England                          ##########
+################################################################################
+#################################################
+###    Required Constants   ###
+#################################################
+### Scenarios
+hotspot <- c("Scenario1", "Scenario2", "Scenario3")
 
+
+#################################################
+###    Load the cartography   ###
+#################################################
+carto <- st_read("../../Data/Carto_England/carto_england.shp")
+carto <- carto[order(carto$Code), ]
   
+carto.nb <- poly2nb(carto)
+W <- nb2mat(carto.nb, zero.policy = TRUE, style = "B")
+nbInfo <- nb2WB(carto.nb)
+  
+W.scale <- -W
+diag(W.scale) <- abs(apply(W.scale, 1, sum))
+Q <- W.scale*exp(mean(log(diag(MASS::ginv(as(W.scale,"matrix"))))))
+scale = exp((1/nrow(W.scale))*sum(log(1/diag(Q))))
+  
+
+for (h in 1:length(hotspot)) {
+    
+  #################################################
+  ###    Load the simulated data   ###
+  #################################################
+  load(paste0("../../Data/Data_SimulationStudy_",hotspot[h],"_England.Rdata"))
+  S.area <- length(unique(DataSIM$code))
+    
+    
+  n.sim <- 1000
+  act.sim <- 1
+  c.save <- 0
+  
+    
+  BYM2.res <- list()
+  repeat{
+    print(act.sim)
+    data <- DataSIM[which(DataSIM$sim==act.sim),]
+    
+    ##########################################################################
+    ##########################################################################
+    ####BYM2
+    constants <- list(pop = data$population,
+                      rate = data$crude.rate/10^5,
+                      N = S.area, 
+                      L = length(nbInfo$adj), 
+                      num = nbInfo$num,
+                      weights = nbInfo$weights, 
+                      adj = nbInfo$adj,
+                      scale = scale)
+    
+    inits = function(){
+      list(alpha = 0, sigma.b = runif(1), theta = rnorm(S.area, sd = 0.1), 
+           phi = rnorm(S.area, sd = 0.1), rho = runif(1))}
+    
+    data.nimble <- list(O = data$observed)
+    
+    mcmc.out <- nimbleMCMC(code = code,
+                           constants = constants,
+                           data = data.nimble,
+                           inits = inits,
+                           nchains = 3,
+                           niter = 30000,
+                           nburnin = 5000,
+                           thin = 75,
+                           summary = TRUE,
+                           samples = TRUE,
+                           monitors = c('r', 'MSS.r', 'RMSS.r'),
+                           samplesAsCodaMCMC = TRUE,
+                           setSeed = c(20112023, 54782021, 04062025),
+                           WAIC = TRUE)
+    
+    BYM2.res[act.sim-c.save] <- list(mcmc.out)
+    
+    if (act.sim%%25 == 0){
+      save(list = c("BYM2.res"),
+           file = paste0("./SimulationStudy_BYM2/Results_SimulationStudy_England_",hotspot[h],"_",act.sim,".Rdata"))
+      
+      c.save<-c.save+25
+      BYM2.res <- list()
+    }
+      
+    act.sim <- act.sim +1
+    
+    if(act.sim==n.sim+1){break}
+  }
+}
+
+
 

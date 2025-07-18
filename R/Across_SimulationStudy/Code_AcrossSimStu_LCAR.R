@@ -20,18 +20,6 @@ if (!file.exists("./SimulationStudy_LCAR")){
   dir.create("./SimulationStudy_LCAR")
 }
 
-
-#################################################
-###    Required Constants   ###
-#################################################
-### Scenarios
-hotspot <- c("Scenario1", "Scenario2", "Scenario3")
-### Number of areas
-n.areas <- c("47", "100", "300")
-
-
-
-
 #################################################
 ###    NIMBLE Code for LCAR  ###
 #################################################
@@ -121,6 +109,22 @@ modelCode <- nimbleCode(
     
   }
 )
+
+
+
+################################################################################
+##########                      Peninsular Spain                      ##########
+################################################################################
+#################################################
+###    Required Constants   ###
+#################################################
+### Scenarios
+hotspot <- c("Scenario1", "Scenario2", "Scenario3")
+### Number of areas
+n.areas <- c("47", "100", "300")
+
+
+
 
 
 #####################################################################
@@ -245,6 +249,128 @@ for (na in 1:length(n.areas)) {
 
 
 
+
+################################################################################
+##########                           England                          ##########
+################################################################################
+#################################################
+###    Required Constants   ###
+#################################################
+### Scenarios
+hotspot <- c("Scenario1", "Scenario2", "Scenario3")
+
+
+#################################################
+###    Load the cartography   ###
+#################################################
+carto <- st_read("../../Data/Carto_England/carto_england.shp")
+carto <- carto[order(carto$Code), ]
+S.area <- length(unique(carto$Code))
+  
+  
+cv.nb <- poly2nb(carto)
+W.nb <- nb2mat(cv.nb, style="B")
+nbInfo <- nb2WB(cv.nb)
+# Number of neighbors of each municipality
+nadj <- card(cv.nb)
+# Neighbors of each municipality
+map <- unlist(cv.nb)
+
+  
+##LCAR
+# Diagonal matrix with the number of neighbors of each area
+D <- diag(nadj)
+# Adjacency matrix
+W <- nb2mat(cv.nb, style = "B", zero.policy = TRUE)
+# Eigenvalues of D-W
+Lambda <- eigen(D - W)$values
+# Identity matrix
+I <- diag(rep(1, S.area))
+
+# All the neighborhoods j ~ k where k < j
+from.to <- cbind(rep(1:S.area, times = nadj), map); colnames(from.to) <- c("from", "to")
+from.to <- from.to[which(from.to[, 1] < from.to[, 2]), ]
+NDist <- nrow(from.to)
+  
+  
+for (h in 1:length(hotspot)) {
+    
+  #################################################
+  ###    Load the simulated data   ###
+  #################################################
+  load(paste0("../../Data/Data_SimulationStudy_",hotspot[h],"_England.Rdata"))
+  S.area <- length(unique(DataSIM$code))
+  
+  
+  n.sim <- 1000
+  act.sim <- 1
+  c.save <- 0
+    
+  LCAR.res <- list()
+  repeat{
+    print(act.sim)
+    data <- DataSIM[which(DataSIM$sim==act.sim),]
+    
+    ##########################################################################
+    ##########################################################################
+    ####L-CAR
+    constants <- list(pop = data$population,
+                      rate = data$crude.rate/10^5,
+                      N = S.area, 
+                      NDist = NDist, 
+                      Lambda = Lambda, 
+                      from.to = from.to)
+    
+    
+    inits = function(){
+      list(alpha = 0, sd.theta = runif(1), rho = runif(1), 
+           theta = rnorm(S.area, sd = 0.1))}
+    
+    
+    data.nimble <- list(O = data$observed, zero.theta = 0)
+    
+    # mcmc.out <- nimbleMCMC(code = modelCode,
+    #                        constants = constants,
+    #                        data = data.nimble,
+    #                        inits = inits(),
+    #                        nchains = 3,
+    #                        niter = 30000,
+    #                        nburnin = 5000,
+    #                        thin = 75,
+    #                        summary = TRUE,
+    #                        samples = TRUE,
+    #                        monitors = c('r', 'MSS.r', 'RMSS.r'),
+    #                        samplesAsCodaMCMC = TRUE,
+    #                        setSeed = c(20112023, 54782021, 04062025),
+    #                        WAIC = TRUE)
+    
+    nimModel <- nimbleModel(code = modelCode, data = data.nimble,
+                            constants = constants, inits = inits())
+    compileNimble(nimModel)
+    modBuilt <- buildMCMC(nimModel, monitors = c('r', 'MSS.r', 'RMSS.r'),
+                          setSeed = TRUE)
+    modComp <- compileNimble(modBuilt, project = nimModel)
+    mcmc.out <- runMCMC(modComp, nchains = 3, niter = 30000, thin = 75,
+                        nburnin = 5000, summary = TRUE)
+    
+    LCAR.res[act.sim-c.save] <- list(mcmc.out)
+    
+    #################################################
+    ###    Save results each 25 simulations   ###
+    #################################################
+    if (act.sim%%25 == 0){
+      save(list = c("LCAR.res"),
+           file = paste0("./SimulationStudy_LCAR/Results_SimulationStudy_England_",hotspot[h],"_",act.sim,".Rdata"))
+      
+      c.save<-c.save+25
+      LCAR.res <- list()
+    }
+    
+    act.sim <- act.sim +1
+    
+    if(act.sim==n.sim+1){break}
+  }
+}
 
 
 

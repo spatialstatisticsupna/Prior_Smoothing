@@ -20,14 +20,6 @@ if (!file.exists("./SimulationStudy_GP")){
   dir.create("./SimulationStudy_GP")
 }
 
-#################################################
-###    Required Constants   ###
-#################################################
-### Scenarios
-hotspot <- c("Scenario1", "Scenario2", "Scenario3")
-### Number of areas
-n.areas <- c("47", "100", "300")
-
 
 #################################################
 ###    NIMBLE Code for GP  ###
@@ -77,8 +69,21 @@ code <- nimbleCode({
 
 
 
+################################################################################
+##########                      Peninsular Spain                      ##########
+################################################################################
+#################################################
+###    Required Constants   ###
+#################################################
+### Scenarios
+hotspot <- c("Scenario1", "Scenario2", "Scenario3")
+### Number of areas
+n.areas <- c("47", "100", "300")
+
+
+
 #####################################################################
-###   Code for all nº of areas and fixed hyperparameters values   ###
+###   Code for all nº of areas   ###
 ####################################################################
 
 for (na in 1:length(n.areas)) {
@@ -176,6 +181,111 @@ for (na in 1:length(n.areas)) {
       
       if(act.sim==n.sim+1){break}
     }
+  }
+}
+
+
+
+
+################################################################################
+##########                           England                          ##########
+################################################################################
+#################################################
+###    Required Constants   ###
+#################################################
+### Scenarios
+hotspot <- c("Scenario1", "Scenario2", "Scenario3")
+
+
+#################################################
+###    Load the cartography   ###
+#################################################
+carto <- st_read("../../Data/Carto_England/carto_england.shp")
+carto <- carto[order(carto$Code), ]
+
+carto.nb <- poly2nb(carto)
+W.nb <- nb2mat(carto.nb, style="B")
+nbInfo <- nb2WB(carto.nb)
+
+g <- st_as_sf(carto)
+g_centroid <- st_point_on_surface(x = g)
+distMatrix <- st_distance(g_centroid, g_centroid)
+distMatrix <- matrix(distMatrix/100000, ncol = nrow(g_centroid)) 
+a <- max(distMatrix)
+  
+for (h in 1:length(hotspot)) {
+  #################################################
+  ###    Load the simulated data   ###
+  #################################################
+  load(paste0("../../Data/Data_SimulationStudy_",hotspot[h],"_England.Rdata"))
+  S.area <- length(unique(DataSIM$code))
+    
+  n.sim <- 1000
+  act.sim <- 1
+  c.save <- 0
+  
+  GP.res <- list()
+  repeat{
+    print(act.sim)
+    data <- DataSIM[which(DataSIM$sim==act.sim),]
+    
+    ##########################################################################
+    ##########################################################################
+    ####GP
+    constants <- list(pop = data$population,
+                      rate = data$crude.rate/10^5,
+                      N = S.area, 
+                      dists = distMatrix,
+                      a = a)
+    
+    inits = function(){
+      list(alpha = 0, 
+           sigma = runif(1), 
+           rho = runif(1, 0, a), 
+           theta = rnorm(S.area, sd = 0.1))}
+    
+    data.nimble <- list(O = data$observed)
+    
+    # mcmc.out <- nimbleMCMC(code = code,
+    #                        constants = constants,
+    #                        data = data.nimble,
+    #                        inits = inits,
+    #                        nchains = 3,
+    #                        niter = 30000,
+    #                        nburnin = 5000,
+    #                        thin = 75,
+    #                        summary = TRUE,
+    #                        samples = TRUE,
+    #                        monitors = c('r', 'MSS.r', 'RMSS.r'),
+    #                        samplesAsCodaMCMC = TRUE,
+    #                        setSeed = c(20112023, 54782021, 04062025),
+    #                        WAIC = TRUE)
+    
+    nimModel <- nimbleModel(code = code, data = data.nimble,
+                            constants = constants, inits = inits())
+    compileNimble(nimModel)
+    modBuilt <- buildMCMC(nimModel, monitors = c('r', 'MSS.r', 'RMSS.r'),
+                          setSeed = TRUE)
+    modComp <- compileNimble(modBuilt, project = nimModel)
+    mcmc.out <- runMCMC(modComp, nchains = 3, niter = 30000, thin = 75,
+                        nburnin = 5000, summary = TRUE)
+    
+    GP.res[act.sim-c.save] <- list(mcmc.out)
+    
+    #################################################
+    ###    Save results each 25 simulations   ###
+    #################################################
+    if (act.sim%%25 == 0){
+      save(list = c("GP.res"),
+           file = paste0("./SimulationStudy_GP/Results_SimulationStudy_England_",hotspot[h],"_",act.sim,".Rdata"))
+      
+      c.save<-c.save+25
+      GP.res <- list()
+    }
+    
+    act.sim <- act.sim +1
+    
+    if(act.sim==n.sim+1){break}
   }
 }
 
