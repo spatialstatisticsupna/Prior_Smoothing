@@ -26,13 +26,13 @@ save.value <- seq(25, n.sim, by =25)
 ###    Code for all nº of areas and priors   ###
 #################################################
 
-for (sa in 1:lengt(areas)) {
+for (sa in 1:length(areas)) {
   S.area <- areas[sa]
   
   #################################################
   ###    Load the cartography    ###
   ################################################
-  load(paste0("../Data/Carto_Spain_",S.area,".RData"))
+  load(paste0("../../Data/Carto_Spain_",S.area,"areas.RData"))
   carto <- Carto.areas
   
 
@@ -50,7 +50,7 @@ for (sa in 1:lengt(areas)) {
       
       for (sv in 1:length(save.value)){
         load(paste0("./SimulationStudy_",priors[pr],"/Results_SimulationStudy_",S.area,"_",scenarios[sc],"_",save.value[sv],".Rdata"))
-        load(paste0("../Data/Data_SimulationStudy_",scenarios[sc],"_",S.area,"areas.Rdata"))
+        load(paste0("../../Data/Data_SimulationStudy_",scenarios[sc],"_",S.area,"areas.Rdata"))
         
         
         for (ns in 1:25) {
