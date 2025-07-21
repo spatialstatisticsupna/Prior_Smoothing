@@ -1,7 +1,7 @@
 ################################################################################
 ################################################################################
 ##########                    5. Data Illustration                    ##########
-##########                   Code to fit Spain data                   ##########
+##########                  Code to fit England data                  ##########
 ################################################################################
 ################################################################################
 
@@ -24,8 +24,6 @@ if (!file.exists("./Results")){
 #################################################
 ###    Required Constants   ###
 #################################################
-### Number of areas
-n.areas <- c("47", "100", "300")
 ### Priors
 prior <- c("iid", "GP", "iCAR", "BYM", "pCAR", "LCAR","BYM2")
 
@@ -60,6 +58,7 @@ code.iid <- nimbleCode({
     
     MSS.r[i] <- (rate[i]-r[i])^2
     RMSS.r[i] <- (rate[i]-r[i])^2/r[i]
+    
   }
 })
 
@@ -323,40 +322,38 @@ code.BYM2 <- nimbleCode({
 
 
 
-
-
+###
+source("./Function_constants.R")
+###
+source("./Function_inits.R")
 
 for (mu in 1:length(name.s)) {
-  ###
-  source("./Function_constants.R")
-  ###
-  source("./Function_inits.R")
   
-  
-  for (na in 1:length(n.areas)) {
     #################################################
     ###    Load the cartography   ###
     #################################################
-    load(paste0("../../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
-    carto <- Carto.areas
-  
+    carto <- st_read("../../Data/Carto_England/carto_england.shp")
+    carto <- carto[order(carto$Code), ]
+    carto$ID <- carto$Code
+    
+    
     #################################################
     ###    Load the data   ###
     #################################################
-    load(paste0("../../Data/Data_Spain_",n.areas[na],"areas.Rdata"))
-    Data.areas$crude.rate <- Data.areas$O/Data.areas$Pop*10^5
+    load(paste0("../../Data/Data_England.Rdata"))
+    data$crude.rate <- data$O/data$Pop*10^5
     
     
     for (pr in 1:length(prior)) {
       
       constants <- f.constants(prior = paste(prior[pr]),
-                               data = Data.areas,
-                               min_u = min.unif[mu],
+                               data = data,
+                               min_u =  min.unif[mu],
                                max_u = max.unif[mu],
                                carto = carto)
       
-      
-      data.nimble <- list(O = Data.areas$O)
+      ###Crear función para data
+      data.nimble <- list(O = data$O)
       if(prior[pr]%in%c("LCAR", "pCAR")){
         data.nimble <- append(data.nimble, list(zero.theta = 0))
       }
@@ -367,6 +364,7 @@ for (mu in 1:length(name.s)) {
                        carto = carto,
                        min.unif =  min.unif[mu],
                        max.unif = max.unif[mu])
+      mon <- names(inits())
       
       eval(parse(text = paste0(prior[pr],".res <- nimbleMCMC(code = code.",prior[pr],",
                              constants = constants,
@@ -378,30 +376,23 @@ for (mu in 1:length(name.s)) {
                              thin = 75,
                              summary = TRUE,
                              samples = TRUE,
-                             monitors = c('r', 'MSS.r', 'RMSS.r'),
+                             monitors = c('r', 'MSS.r', 'RMSS.r', mon),
                              samplesAsCodaMCMC = TRUE,
                              setSeed = c(20112023, 54782021, 04062025),
                              WAIC = TRUE)")))
-      
-      rm(list = c("constants", "data.nimble", "inits"))
       
     }
     
     results <- list(iid.res = iid.res,
                     iCAR.res = iCAR.res,
-                    # pCAR.res = pCAR.res,
-                    # LCAR.res = LCAR.res,
-                    # BYM.res = BYM.res,
-                    # BYM2.res = BYM2.res,
+                    pCAR.res = pCAR.res,
+                    LCAR.res = LCAR.res,
+                    BYM.res = BYM.res,
+                    BYM2.res = BYM2.res,
                     GP.res = GP.res)
     
-    save(results, file = paste0("./Results/Results_Spain_",n.areas[na],"_",name.s[mu],".Rdata"))
-    
-    rm(list = c("results", "iid.res", "iCAR.res",
-                # "pCAR.res", "LCAR.res",
-                # "BYM.res", "BYM2.res",
-                "GP.res"))
-  }
+    save(results, file = paste0("./Results/Results_England_",name.s[mu],".Rdata"))
+  
 }
 
 
