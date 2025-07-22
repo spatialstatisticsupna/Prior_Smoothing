@@ -59,13 +59,13 @@ for (sa in 1:length(S.area)) {
     for (pr in 1:length(priors)) {
       eval(parse(text = paste0("res <- results$",priors[pr],".res")))
       
-      tab.results[pr, 1] <- round(mean(res$summary$all.chains[paste0("MSS.r[", 1:S.area[sa], "]"), "Mean"]*10^10),3)
-      tab.results[pr, 2] <- round(mean(res$summary$all.chains[paste0("RMSS.r[", 1:S.area[sa], "]"), "Mean"]*10^5),3)
+      tab.results[pr, 1] <- round(mean(res$summary$all.chains[paste0("MSS.r[", 1:n.area, "]"), "Mean"]*10^10),3)
+      tab.results[pr, 2] <- round(mean(res$summary$all.chains[paste0("RMSS.r[", 1:n.area, "]"), "Mean"]*10^5),3)
       
-      tab.results[pr, 3] <- round(max(res$summary$all.chains[paste0("MSS.r[", 1:S.area[sa], "]"), "Mean"]*10^10),3)
-      tab.results[pr, 4] <- round(max(res$summary$all.chains[paste0("RMSS.r[", 1:S.area[sa], "]"), "Mean"]*10^5),3)
+      tab.results[pr, 3] <- round(max(res$summary$all.chains[paste0("MSS.r[", 1:n.area, "]"), "Mean"]*10^10),3)
+      tab.results[pr, 4] <- round(max(res$summary$all.chains[paste0("RMSS.r[", 1:n.area, "]"), "Mean"]*10^5),3)
       
-      tab.results[pr, 8] <- round(sum(res$summary$all.chains[paste0("MSS.r[", 1:S.area[sa], "]"), "Mean"]*10^10)/sum((mean(Data.areas$crude.rate) - Data.areas$crude.rate)^2),3)
+      tab.results[pr, 8] <- round(sum(res$summary$all.chains[paste0("MSS.r[", 1:n.area, "]"), "Mean"]*10^10)/sum((mean(Data.areas$crude.rate) - Data.areas$crude.rate)^2),3)
       
       
       if(priors[pr]%in%c("iid")){
@@ -159,7 +159,8 @@ for (sa in 1:length(S.area)) {
   #################################################
   load(paste0("../../Data/Carto_Spain_",S.area[sa],"areas.Rdata"))
   carto <- Carto.areas
-  district <- carto$ID
+  district <- unique(carto$ID)
+  n.area <- length(district)
   
   #################################################
   ###    Load the data   ###
@@ -173,7 +174,7 @@ for (sa in 1:length(S.area)) {
   carto$count <- data$O
 
 for (sg in 1:length(unif)) {
-  data.results <- cbind(rep("crude rate", S.area[sa]), district, data$crude.rate)
+  data.results <- cbind(rep("crude rate", n.area), district, data$crude.rate)
   break_points <- round(quantile(data$crude.rate, probs = seq(0, 1, 1/5)),0)
   break_points <- as.numeric(break_points)[1:5]
   load(paste0("./Results/Results_Spain_",S.area[sa],"_",unif[sg],".Rdata"))
@@ -182,8 +183,8 @@ for (sg in 1:length(unif)) {
     eval(parse(text = paste0("res <- results$",priors[pr],".res")))
 
     data.results <- rbind(data.results,
-                          cbind(rep(priors[pr], S.area[sa]), district, 
-                                res$summary$all.chains[paste0("r[", 1:S.area[sa], "]"), "Mean"]*10^5))
+                          cbind(rep(priors[pr], n.area), district, 
+                                res$summary$all.chains[paste0("r[", 1:n.area, "]"), "Mean"]*10^5))
 
   }
 
