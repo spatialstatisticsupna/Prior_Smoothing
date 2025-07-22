@@ -34,14 +34,17 @@ for (sa in 1:length(S.area)) {
   #################################################
   ###    Load the cartography   ###
   #################################################
-  load(paste0("../../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Carto_Spain_",S.area[sa],"areas.Rdata"))
   carto <- Carto.areas
   n.area <- length(unique(carto$ID))
   
+  carto.nb <- poly2nb(carto)
+  W.nb <- nb2mat(carto.nb, style="B")
+  nbInfo <- nb2WB(carto.nb)
   #################################################
   ###    Load the data   ###
   #################################################
-  load(paste0("../../Data/Data_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Data_Spain_",S.area[sa],"areas.Rdata"))
   Data.areas$crude.rate <- Data.areas$O/Data.areas$Pop*10^5
   
   
@@ -51,7 +54,7 @@ for (sa in 1:length(S.area)) {
   
   for (sg in 1:length(unif)) {
     tab.results <- matrix(NA, ncol = 8, nrow = length(priors))
-    load(paste0("./Results/Results_Spain_",S.area[sa],"_",name.s[sg],".Rdata"))
+    load(paste0("./Results/Results_Spain_",S.area[sa],"_",unif[sg],".Rdata"))
     
     for (pr in 1:length(priors)) {
       eval(parse(text = paste0("res <- results$",priors[pr],".res")))
@@ -62,7 +65,7 @@ for (sa in 1:length(S.area)) {
       tab.results[pr, 3] <- round(max(res$summary$all.chains[paste0("MSS.r[", 1:S.area[sa], "]"), "Mean"]*10^10),3)
       tab.results[pr, 4] <- round(max(res$summary$all.chains[paste0("RMSS.r[", 1:S.area[sa], "]"), "Mean"]*10^5),3)
       
-      tab.results[pr, 8] <- round(sum(res$summary$all.chains[paste0("MSS.r[", 1:S.area[sa], "]"), "Mean"]*10^10)/sum((mean(data$crude.rate) - data$crude.rate)^2),3)
+      tab.results[pr, 8] <- round(sum(res$summary$all.chains[paste0("MSS.r[", 1:S.area[sa], "]"), "Mean"]*10^10)/sum((mean(Data.areas$crude.rate) - Data.areas$crude.rate)^2),3)
       
       
       if(priors[pr]%in%c("iid")){
@@ -154,14 +157,14 @@ for (sa in 1:length(S.area)) {
   #################################################
   ###    Load the cartography   ###
   #################################################
-  load(paste0("../../Data/Carto_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Carto_Spain_",S.area[sa],"areas.Rdata"))
   carto <- Carto.areas
-  district <- length(unique(carto$ID))
+  district <- carto$ID
   
   #################################################
   ###    Load the data   ###
   #################################################
-  load(paste0("../../Data/Data_Spain_",n.areas[na],"areas.Rdata"))
+  load(paste0("../../Data/Data_Spain_",S.area[sa],"areas.Rdata"))
   Data.areas$crude.rate <- Data.areas$O/Data.areas$Pop*10^5
   data <- Data.areas
   
@@ -173,13 +176,14 @@ for (sg in 1:length(unif)) {
   data.results <- cbind(rep("crude rate", S.area[sa]), district, data$crude.rate)
   break_points <- round(quantile(data$crude.rate, probs = seq(0, 1, 1/5)),0)
   break_points <- as.numeric(break_points)[1:5]
-  load(paste0("./Results/Results_Spain_",S.area[sa],"_",name.s[sg],".Rdata"))
+  load(paste0("./Results/Results_Spain_",S.area[sa],"_",unif[sg],".Rdata"))
 
   for (pr in 1:length(priors)) {
     eval(parse(text = paste0("res <- results$",priors[pr],".res")))
 
     data.results <- rbind(data.results,
-                          cbind(rep(priors[pr], S.area[sa]), district, res$summary$all.chains[paste0("r[", 1:S.area[sa], "]"), "Mean"]*10^5))
+                          cbind(rep(priors[pr], S.area[sa]), district, 
+                                res$summary$all.chains[paste0("r[", 1:S.area[sa], "]"), "Mean"]*10^5))
 
   }
 
@@ -190,7 +194,7 @@ for (sg in 1:length(unif)) {
   data.results$prior<- factor(data.results$prior, levels = c("crude rate", priors))
   data.results$est.rate <- as.numeric(data.results$est.rate)
 
-  data2 <- merge(carto2, data.results, by = c("ID"))
+  data2 <- merge(carto, data.results, by = c("ID"))
 
 
   palet <- c("#ffffd4", "#fee391", "#fec44f", "#fe9929", "#d95f0e", "#993404")

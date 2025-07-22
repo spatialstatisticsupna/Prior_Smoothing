@@ -367,6 +367,7 @@ for (mu in 1:length(name.s)) {
                        carto = carto,
                        min.unif =  min.unif[mu],
                        max.unif = max.unif[mu])
+      mon <- names(inits())
       
       eval(parse(text = paste0(prior[pr],".res <- nimbleMCMC(code = code.",prior[pr],",
                              constants = constants,
@@ -378,7 +379,7 @@ for (mu in 1:length(name.s)) {
                              thin = 75,
                              summary = TRUE,
                              samples = TRUE,
-                             monitors = c('r', 'MSS.r', 'RMSS.r'),
+                             monitors = c('r', 'MSS.r', 'RMSS.r', mon),
                              samplesAsCodaMCMC = TRUE,
                              setSeed = c(20112023, 54782021, 04062025),
                              WAIC = TRUE)")))
@@ -389,17 +390,17 @@ for (mu in 1:length(name.s)) {
     
     results <- list(iid.res = iid.res,
                     iCAR.res = iCAR.res,
-                    # pCAR.res = pCAR.res,
-                    # LCAR.res = LCAR.res,
-                    # BYM.res = BYM.res,
-                    # BYM2.res = BYM2.res,
+                    pCAR.res = pCAR.res,
+                    LCAR.res = LCAR.res,
+                    BYM.res = BYM.res,
+                    BYM2.res = BYM2.res,
                     GP.res = GP.res)
     
     save(results, file = paste0("./Results/Results_Spain_",n.areas[na],"_",name.s[mu],".Rdata"))
     
     rm(list = c("results", "iid.res", "iCAR.res",
-                # "pCAR.res", "LCAR.res",
-                # "BYM.res", "BYM2.res",
+                "pCAR.res", "LCAR.res",
+                "BYM.res", "BYM2.res",
                 "GP.res"))
   }
 }
