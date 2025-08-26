@@ -63,4 +63,5 @@ This folder contains the R code to replicate and reproduce the within prior and 
 The work was supported by Project PID2020-113125RB-I00/MCIN/AEI/10.13039/501100011033. Garazi Retegui is supported by PhD student scholarship from the Public University of Navarra together with Banco Santander (Ayudas Predoctorales Santander UPNA 2021-2022). Jaione Etxeberria and María Dolores Ugarte would like to acknowledge support from Project UNEDPAM/PI/PR24/05A. ![plot](https://github.com/spatialstatisticsupna/Prior_Smoothing/blob/main/micin-aei.jpg) ![plot](https://github.com/spatialstatisticsupna/Prior_Smoothing/blob/main/UNED_Pamplona_2023.jpg)
 
 # References <a name="Ref"/>
-[Retegui, G., Gelfand, A., Etxeberria, J., and Ugarte, M.D. (2025). On prior smoothing with discrete spatial data in the context of disease mapping. *Statistical Methods in Medical Research*, online first.](https://doi.org/10.1177/09622802251362659)
+[Retegui, G., Gelfand, A., Etxeberria, J., and Ugarte, M.D. (2025). On prior smoothing with discrete spatial data in the context of disease mapping. *Statistical Methods in Medical Research*, in press.](https://doi.org/10.1177/09622802251362659)
+
